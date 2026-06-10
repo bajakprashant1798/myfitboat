@@ -1,0 +1,172 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+ * MyFitBoat design system
+ * Brand: gold #EEBA1A on rich black #010101
+ * Default theme = dark. Light theme = cream surfaces.
+ * ============================================================ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+
+  --font-display: "Anton", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --shadow-glow: 0 0 80px -20px var(--brand);
+}
+
+/* DEFAULT = DARK (athletic engineering direction) */
+:root {
+  --radius: 0.25rem;
+
+  --background: oklch(0.18 0.01 240); /* Soft premium charcoal slate */
+  --foreground: oklch(0.98 0.005 90); /* Highly legible cream */
+  --surface: oklch(0.23 0.01 240); /* Sleek charcoal card surface */
+  --surface-2: oklch(0.28 0.01 240);
+  --ink: oklch(0.98 0.005 90);
+
+  --card: oklch(0.23 0.01 240);
+  --card-foreground: oklch(0.98 0.005 90);
+  --popover: oklch(0.23 0.01 240);
+  --popover-foreground: oklch(0.98 0.005 90);
+
+  --primary: oklch(0.82 0.16 84); /* #EEBA1A gold */
+  --primary-foreground: oklch(0.18 0.01 240);
+  --brand: oklch(0.82 0.16 84);
+  --brand-foreground: oklch(0.18 0.01 240);
+
+  --secondary: oklch(0.28 0.01 240);
+  --secondary-foreground: oklch(0.98 0.005 90);
+  --muted: oklch(0.28 0.01 240);
+  --muted-foreground: oklch(0.82 0.01 90); /* Enhanced readability for small/muted text */
+  --accent: oklch(0.82 0.16 84);
+  --accent-foreground: oklch(0.18 0.01 240);
+
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.98 0.005 90);
+
+  --border: oklch(1 0 0 / 0.12); /* Slightly defined borders for structure */
+  --input: oklch(1 0 0 / 0.12);
+  --ring: oklch(0.82 0.16 84 / 0.5);
+}
+
+/* LIGHT — premium cream */
+.light {
+  --background: oklch(0.985 0.005 90); /* warm off-white */
+  --foreground: oklch(0.1 0 0);
+  --surface: oklch(0.96 0.005 90);
+  --surface-2: oklch(0.92 0.01 90);
+  --ink: oklch(0.1 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.1 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.1 0 0);
+
+  --primary: oklch(0.02 0 0);
+  --primary-foreground: oklch(0.97 0.01 90);
+  --brand: oklch(0.72 0.16 84); /* slightly deeper gold for contrast on light */
+  --brand-foreground: oklch(0.02 0 0);
+
+  --secondary: oklch(0.96 0.005 90);
+  --secondary-foreground: oklch(0.1 0 0);
+  --muted: oklch(0.93 0.005 90);
+  --muted-foreground: oklch(0.4 0 0);
+  --accent: oklch(0.72 0.16 84);
+  --accent-foreground: oklch(0.02 0 0);
+
+  --border: oklch(0 0 0 / 0.1);
+  --input: oklch(0 0 0 / 0.1);
+  --ring: oklch(0.72 0.16 84 / 0.5);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--brand);
+    color: var(--brand-foreground);
+  }
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes draw-line {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-draw {
+  animation: draw-line 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: left;
+}
