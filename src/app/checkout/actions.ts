@@ -1527,7 +1527,15 @@ export async function adminGetCertificates(password: string) {
       product_ids: (c.product_certificates || []).map((pc: any) => pc.product_id),
     }));
 
-    return { success: true, certificates: formatted };
+    const localCerts = await loadSimulatedCertificates();
+    const merged = [...formatted];
+    for (const lc of localCerts) {
+      if (!merged.some((c) => c.id === lc.id || c.title === lc.title)) {
+        merged.push(lc);
+      }
+    }
+
+    return { success: true, certificates: merged };
   } catch (err: unknown) {
     console.error("[Admin Get Certificates] Supabase Error:", err);
     const certs = await loadSimulatedCertificates();
@@ -1632,6 +1640,17 @@ export async function adminSaveCertificate(
         if (linkErr) throw linkErr;
       }
     }
+
+    // Keep local simulated certificates file in sync
+    const list = await loadSimulatedCertificates();
+    const finalCert = { ...data, id: certId, product_ids: productIds };
+    const existingIdx = list.findIndex((c) => c.id === certId || c.title === data.title);
+    if (existingIdx !== -1) {
+      list[existingIdx] = finalCert;
+    } else {
+      list.unshift(finalCert);
+    }
+    saveSimulatedCertificates(list);
 
     return { success: true, certId };
   } catch (err: unknown) {

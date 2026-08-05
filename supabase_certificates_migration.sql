@@ -56,6 +56,10 @@ CREATE POLICY "Admin All Product Certificates"
     FOR ALL 
     USING (true);
 
+-- 7. Grant Table Permissions to Supabase API Roles
+GRANT ALL ON TABLE public.certificates TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.product_certificates TO anon, authenticated, service_role, postgres;
+
 -- 7. Seed Initial Lab Certificates (Optional)
 INSERT INTO public.certificates (id, title, issuer, certificate_number, issue_date, summary, file_url, badge)
 VALUES
