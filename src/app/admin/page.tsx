@@ -11,6 +11,10 @@ import {
   adminSaveProduct,
   adminDeleteProduct,
   adminUploadImage,
+  adminGetCertificates,
+  adminSaveCertificate,
+  adminDeleteCertificate,
+  CertificateData,
 } from "@/app/checkout/actions";
 import {
   Loader2,
@@ -26,6 +30,10 @@ import {
   Upload,
   X,
   Plus,
+  FileCheck,
+  Edit,
+  ExternalLink,
+  Shield,
 } from "lucide-react";
 
 const inr = (n: number) =>
@@ -41,7 +49,9 @@ export default function AdminPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"orders" | "products" | "product-editor">("orders");
+  const [activeTab, setActiveTab] = useState<
+    "orders" | "products" | "product-editor" | "certificates" | "cert-editor"
+  >("orders");
   const [orders, setOrders] = useState<OrderDetail[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -57,6 +67,14 @@ export default function AdminPage() {
   const [fullProducts, setFullProducts] = useState<FullProductDetail[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<FullProductDetail> | null>(null);
+
+  // Certificate management state
+  const [certificates, setCertificates] = useState<CertificateData[]>([]);
+  const [isLoadingCertificates, setIsLoadingCertificates] = useState(false);
+  const [editingCert, setEditingCert] = useState<Partial<CertificateData> | null>(null);
+  const [certProductIds, setCertProductIds] = useState<string[]>([]);
+  const [isSavingCert, setIsSavingCert] = useState(false);
+  const [certSaveMessage, setCertSaveMessage] = useState("");
 
   // Formulation arrays builders
   const [formVariants, setFormVariants] = useState<FullProductDetail["variants"]>([]);
@@ -144,6 +162,83 @@ export default function AdminPage() {
         setIsLoadingProducts(false);
         console.error("Error fetching full products catalog:", err);
       });
+
+    setIsLoadingCertificates(true);
+    adminGetCertificates(pass)
+      .then((res) => {
+        setIsLoadingCertificates(false);
+        if (res.success && res.certificates) {
+          setCertificates(res.certificates);
+        }
+      })
+      .catch((err) => {
+        setIsLoadingCertificates(false);
+        console.error("Error fetching certificates:", err);
+      });
+  };
+
+  const handleNewCert = () => {
+    setEditingCert({
+      title: "",
+      issuer: "",
+      certificate_number: "",
+      issue_date: "",
+      summary: "",
+      file_url: "",
+      badge: "NABL Accredited",
+    });
+    setCertProductIds(fullProducts.map((p) => p.id));
+    setCertSaveMessage("");
+    setActiveTab("cert-editor");
+  };
+
+  const handleEditCert = (cert: CertificateData) => {
+    setEditingCert(cert);
+    setCertProductIds(cert.product_ids || []);
+    setCertSaveMessage("");
+    setActiveTab("cert-editor");
+  };
+
+  const handleSaveCert = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCert?.title || !editingCert?.issuer || !editingCert?.certificate_number) {
+      setCertSaveMessage("Please complete Title, Issuer, and Certificate Number.");
+      return;
+    }
+
+    setIsSavingCert(true);
+    setCertSaveMessage("");
+
+    adminSaveCertificate(password, editingCert as CertificateData, certProductIds)
+      .then((res) => {
+        setIsSavingCert(false);
+        if (res.success) {
+          setCertSaveMessage("Certificate saved successfully!");
+          setEditingCert(null);
+          setActiveTab("certificates");
+          loadDashboardData(password);
+          if (res.warning) {
+            alert(`Saved locally! Note: ${res.warning}`);
+          }
+        } else {
+          setCertSaveMessage(res.error || "Failed to save certificate.");
+        }
+      })
+      .catch(() => {
+        setIsSavingCert(false);
+        setCertSaveMessage("Error saving certificate.");
+      });
+  };
+
+  const handleDeleteCert = (certId: string) => {
+    if (!confirm("Are you sure you want to delete this lab certificate?")) return;
+    adminDeleteCertificate(password, certId).then((res) => {
+      if (res.success) {
+        loadDashboardData(password);
+      } else {
+        alert(res.error || "Failed to delete certificate.");
+      }
+    });
   };
 
   const handleLogout = () => {
@@ -405,10 +500,10 @@ export default function AdminPage() {
         </div>
 
         {/* TABS SELECTOR */}
-        <div className="flex border-b border-border font-sans text-sm font-semibold uppercase tracking-wider mb-8 divide-x divide-border">
+        <div className="flex border-b border-border font-sans text-sm font-semibold uppercase tracking-wider mb-8 divide-x divide-border overflow-x-auto">
           <button
             onClick={() => setActiveTab("orders")}
-            className={`px-6 py-4 flex items-center gap-2 cursor-pointer ${
+            className={`px-6 py-4 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === "orders"
                 ? "bg-surface text-brand border-b border-brand"
                 : "text-muted-foreground hover:text-foreground"
@@ -419,7 +514,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("products")}
-            className={`px-6 py-4 flex items-center gap-2 cursor-pointer ${
+            className={`px-6 py-4 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === "products"
                 ? "bg-surface text-brand border-b border-brand"
                 : "text-muted-foreground hover:text-foreground"
@@ -430,11 +525,31 @@ export default function AdminPage() {
           </button>
           {activeTab === "product-editor" && (
             <button
-              className="px-6 py-4 flex items-center gap-2 bg-surface text-brand border-b border-brand font-bold"
+              className="px-6 py-4 flex items-center gap-2 bg-surface text-brand border-b border-brand font-bold shrink-0"
               disabled
             >
               <PlusCircle className="size-3.5" />
               <span>{editingProduct?.id ? "Edit Formulation" : "Create Formulation"}</span>
+            </button>
+          )}
+          <button
+            onClick={() => setActiveTab("certificates")}
+            className={`px-6 py-4 flex items-center gap-2 cursor-pointer shrink-0 ${
+              activeTab === "certificates"
+                ? "bg-surface text-brand border-b border-brand"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FileCheck className="size-3.5" />
+            <span>Lab Certificates ({certificates.length})</span>
+          </button>
+          {activeTab === "cert-editor" && (
+            <button
+              className="px-6 py-4 flex items-center gap-2 bg-surface text-brand border-b border-brand font-bold shrink-0"
+              disabled
+            >
+              <PlusCircle className="size-3.5" />
+              <span>{editingCert?.id ? "Edit Lab Certificate" : "New Lab Certificate"}</span>
             </button>
           )}
         </div>
@@ -1604,6 +1719,378 @@ export default function AdminPage() {
                   className="px-8 py-4.5 border border-border bg-surface text-foreground font-display text-xl uppercase tracking-wider hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all cursor-pointer"
                 >
                   Discard
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* CERTIFICATES CATALOG TAB */}
+        {activeTab === "certificates" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface p-6 border border-border rounded">
+              <div>
+                <h2 className="font-display text-2xl uppercase">
+                  Quality & Compliance Certificates
+                </h2>
+                <p className="font-sans text-xs text-muted-foreground mt-1">
+                  Manage lab test reports, FSSAI licenses, and WHO-GMP documents. Each certificate
+                  can be associated with multiple products simultaneously.
+                </p>
+              </div>
+              <button
+                onClick={handleNewCert}
+                className="px-6 py-3 bg-brand text-brand-foreground font-sans text-xs font-semibold uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors flex items-center gap-2 cursor-pointer shrink-0 rounded"
+              >
+                <Plus className="size-4" />
+                <span>Add Lab Certificate</span>
+              </button>
+            </div>
+
+            {isLoadingCertificates ? (
+              <div className="p-12 text-center text-muted-foreground flex items-center justify-center gap-2 font-mono text-xs uppercase">
+                <Loader2 className="size-4 animate-spin text-brand" />
+                <span>Loading Certificates...</span>
+              </div>
+            ) : certificates.length === 0 ? (
+              <div className="p-12 text-center border border-dashed border-border text-muted-foreground font-mono text-xs uppercase rounded">
+                No lab certificates registered yet. Click "Add Lab Certificate" to create your first
+                report.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {certificates.map((cert) => {
+                  const linkedProducts = fullProducts.filter((p) =>
+                    (cert.product_ids || []).includes(p.id),
+                  );
+
+                  return (
+                    <div
+                      key={cert.id}
+                      className="bg-surface border border-border p-6 rounded space-y-4 flex flex-col justify-between"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 bg-brand/10 text-brand border border-brand/30 font-mono text-[9px] font-bold uppercase tracking-wider rounded">
+                            {cert.badge || "Lab Verified"}
+                          </span>
+                          <FileCheck className="size-4 text-brand" />
+                        </div>
+
+                        <div>
+                          <h3 className="font-display text-xl uppercase text-foreground">
+                            {cert.title}
+                          </h3>
+                          <div className="font-mono text-xs text-muted-foreground mt-1">
+                            Issued by: <strong className="text-foreground">{cert.issuer}</strong>
+                          </div>
+                        </div>
+
+                        <div className="bg-background p-3 border border-border/60 rounded font-mono text-[11px] space-y-1 text-muted-foreground">
+                          <div className="flex justify-between">
+                            <span>Cert #:</span>
+                            <span className="text-foreground font-semibold">
+                              {cert.certificate_number}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Issue Date:</span>
+                            <span className="text-foreground">{cert.issue_date}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {cert.summary}
+                        </p>
+
+                        <div className="pt-2">
+                          <div className="font-mono text-[10px] uppercase text-muted-foreground mb-1.5 font-semibold">
+                            Linked Products ({linkedProducts.length}):
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {linkedProducts.length > 0 ? (
+                              linkedProducts.map((p) => (
+                                <span
+                                  key={p.id}
+                                  className="px-2 py-0.5 bg-background border border-border text-foreground font-mono text-[9px] rounded"
+                                >
+                                  {p.name.split("-")[0]}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="font-mono text-[9px] text-muted-foreground italic">
+                                None selected
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-border/40 flex items-center justify-between gap-3">
+                        <a
+                          href={cert.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-xs text-brand hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink className="size-3" />
+                          <span>View File</span>
+                        </a>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditCert(cert)}
+                            className="px-3 py-1.5 border border-border bg-background hover:border-brand/40 text-foreground font-mono text-xs transition-colors flex items-center gap-1 cursor-pointer rounded"
+                          >
+                            <Edit className="size-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCert(cert.id!)}
+                            className="px-3 py-1.5 border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 font-mono text-xs transition-colors flex items-center gap-1 cursor-pointer rounded"
+                          >
+                            <Trash2 className="size-3" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CERTIFICATE EDITOR TAB */}
+        {activeTab === "cert-editor" && editingCert && (
+          <div className="bg-surface border border-border p-6 md:p-8 rounded space-y-8">
+            <div className="flex justify-between items-center border-b border-border pb-4">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-brand font-bold">
+                  Lab Verification Registry
+                </div>
+                <h2 className="font-display text-3xl uppercase mt-1">
+                  {editingCert.id ? "Edit Lab Certificate" : "New Lab Certificate"}
+                </h2>
+              </div>
+              <button
+                onClick={() => setActiveTab("certificates")}
+                className="px-4 py-2 border border-border bg-background text-muted-foreground hover:text-foreground text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer rounded"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCert} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground block">
+                    Certificate Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingCert.title || ""}
+                    onChange={(e) => setEditingCert({ ...editingCert, title: e.target.value })}
+                    placeholder="e.g. Potassium Assay & Electrolyte Purity Report"
+                    className="w-full bg-background border border-border px-4 py-3 font-sans text-sm text-foreground focus:outline-none focus:border-brand rounded"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground block">
+                    Issuing Authority / Laboratory *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingCert.issuer || ""}
+                    onChange={(e) => setEditingCert({ ...editingCert, issuer: e.target.value })}
+                    placeholder="e.g. Qualiset Testing Labs / NABL Accredited"
+                    className="w-full bg-background border border-border px-4 py-3 font-sans text-sm text-foreground focus:outline-none focus:border-brand rounded"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground block">
+                    Certificate Number *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingCert.certificate_number || ""}
+                    onChange={(e) =>
+                      setEditingCert({ ...editingCert, certificate_number: e.target.value })
+                    }
+                    placeholder="e.g. COA-2025-550K"
+                    className="w-full bg-background border border-border px-4 py-3 font-sans text-sm text-foreground focus:outline-none focus:border-brand rounded"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground block">
+                    Issue Date / Validity *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingCert.issue_date || ""}
+                    onChange={(e) => setEditingCert({ ...editingCert, issue_date: e.target.value })}
+                    placeholder="e.g. January 2025"
+                    className="w-full bg-background border border-border px-4 py-3 font-sans text-sm text-foreground focus:outline-none focus:border-brand rounded"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground block">
+                    Badge Tag Label
+                  </label>
+                  <input
+                    type="text"
+                    value={editingCert.badge || ""}
+                    onChange={(e) => setEditingCert({ ...editingCert, badge: e.target.value })}
+                    placeholder="e.g. NABL Accredited, FSSAI Certified, WHO-GMP"
+                    className="w-full bg-background border border-border px-4 py-3 font-sans text-sm text-foreground focus:outline-none focus:border-brand rounded"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground block">
+                    Certificate File / Image URL *
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      required
+                      value={editingCert.file_url || ""}
+                      onChange={(e) => setEditingCert({ ...editingCert, file_url: e.target.value })}
+                      placeholder="e.g. /product/Label.jpg or https://..."
+                      className="flex-1 bg-background border border-border px-4 py-3 font-sans text-sm text-foreground focus:outline-none focus:border-brand rounded"
+                    />
+                    <label className="px-4 py-3 bg-surface border border-border hover:border-brand/40 text-foreground font-mono text-xs uppercase tracking-wider cursor-pointer flex items-center gap-1 rounded">
+                      <Upload className="size-3.5" />
+                      <span>Upload</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const img = new Image();
+                            img.onload = () => {
+                              const canvas = document.createElement("canvas");
+                              const ctx = canvas.getContext("2d");
+                              if (!ctx) return;
+                              canvas.width = img.width;
+                              canvas.height = img.height;
+                              ctx.drawImage(img, 0, 0);
+                              const base64 = canvas.toDataURL("image/webp", 0.85);
+                              adminUploadImage(password, base64, file.name).then((res) => {
+                                if (res.success && res.publicUrl) {
+                                  setEditingCert((prev) => ({ ...prev, file_url: res.publicUrl }));
+                                }
+                              });
+                            };
+                            img.src = ev.target?.result as string;
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground block">
+                  Verification Summary Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={editingCert.summary || ""}
+                  onChange={(e) => setEditingCert({ ...editingCert, summary: e.target.value })}
+                  placeholder="e.g. NABL lab assay confirming 550mg active Potassium Citrate per sachet with zero heavy metal contaminants."
+                  className="w-full bg-background border border-border p-4 font-sans text-sm text-foreground focus:outline-none focus:border-brand rounded"
+                />
+              </div>
+
+              {/* MULTI-PRODUCT ASSOCIATIONS */}
+              <div className="border border-border p-6 bg-background rounded space-y-4">
+                <div className="font-mono text-xs uppercase font-bold text-brand tracking-wider">
+                  Associated Products (Select all that apply)
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Check all products where this certificate should appear under the Certificates
+                  tab.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                  {fullProducts.map((prod) => {
+                    const isChecked = certProductIds.includes(prod.id);
+                    return (
+                      <label
+                        key={prod.id}
+                        className={`p-3 border rounded flex items-center gap-3 cursor-pointer transition-colors ${
+                          isChecked
+                            ? "bg-surface border-brand text-foreground"
+                            : "bg-surface/50 border-border text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCertProductIds([...certProductIds, prod.id]);
+                            } else {
+                              setCertProductIds(certProductIds.filter((id) => id !== prod.id));
+                            }
+                          }}
+                          className="size-4 accent-brand rounded cursor-pointer"
+                        />
+                        <span className="font-mono text-xs uppercase font-medium">{prod.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {certSaveMessage && (
+                <div className="p-3 bg-brand/10 border border-brand/20 text-brand text-xs font-mono uppercase tracking-wider text-center rounded">
+                  {certSaveMessage}
+                </div>
+              )}
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="submit"
+                  disabled={isSavingCert}
+                  className="flex-1 py-4 bg-brand text-brand-foreground font-display text-xl uppercase tracking-wider hover:bg-foreground hover:text-background transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer rounded"
+                >
+                  {isSavingCert ? (
+                    <>
+                      <Loader2 className="size-5 animate-spin" />
+                      <span>Saving Certificate...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="size-5" />
+                      <span>Save Lab Certificate</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingCert(null);
+                    setActiveTab("certificates");
+                  }}
+                  className="px-8 py-4 border border-border bg-surface text-foreground font-display text-xl uppercase tracking-wider hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all cursor-pointer rounded"
+                >
+                  Cancel
                 </button>
               </div>
             </form>

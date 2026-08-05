@@ -6,7 +6,7 @@ import { useTheme } from "./ThemeProvider";
 export function Footer() {
   const { theme } = useTheme();
   return (
-    <footer className="bg-surface border-t border-border px-6 md:px-16 py-16">
+    <footer className="bg-[var(--footer-bg)] border-t border-[var(--footer-border)] px-6 md:px-16 py-16 transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-20">
           <div>
@@ -119,20 +119,20 @@ export function Footer() {
           <Link href="/" className="flex items-center">
             {theme === "dark" ? (
               <img
-                src="/myfitboat_logo_white.png"
+                src="/myfitboat-light.png"
                 alt="MyFitBoat"
-                className="h-7 w-auto object-contain opacity-30 hover:opacity-80 transition-opacity"
+                className="h-8 w-auto object-contain opacity-40 hover:opacity-100 transition-opacity"
               />
             ) : (
               <img
-                src="/myfitboat_logo.png"
+                src="/myfitboat-dark.png"
                 alt="MyFitBoat"
-                className="h-7 w-auto object-contain opacity-30 hover:opacity-80 transition-opacity"
+                className="h-8 w-auto object-contain opacity-40 hover:opacity-100 transition-opacity"
               />
             )}
           </Link>
           <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.2em]">
-            © {new Date().getFullYear()} MyFitBoat Performance · Engineered in Mumbai
+            © {new Date().getFullYear()} MyFitBoat
           </span>
         </div>
       </div>

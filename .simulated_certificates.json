@@ -1,0 +1,54 @@
+[
+  {
+    "title": "demo",
+    "issuer": "demo",
+    "certificate_number": "demo",
+    "issue_date": "demo",
+    "summary": "demo",
+    "file_url": "https://llgbrmcfxgnhjzoxsncm.supabase.co/storage/v1/object/public/product-images/1785958567491-back_lemon.png",
+    "badge": "NABL Accredited",
+    "id": "mock-uuid-lwtck4rwo",
+    "product_ids": [
+      "3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"
+    ]
+  },
+  {
+    "id": "cert-1",
+    "title": "Potassium Assay & Electrolyte Purity Report",
+    "issuer": "Qualiset Testing Laboratories / NABL Accredited",
+    "certificate_number": "COA-2025-550K",
+    "issue_date": "January 2025",
+    "summary": "NABL lab assay confirming 550mg active Potassium Citrate per sachet with zero heavy metal contaminants.",
+    "file_url": "/product/WhatsApp-Image-2025-09-08-at-15.24.57.png",
+    "badge": "NABL Accredited",
+    "product_ids": [
+      "3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"
+    ]
+  },
+  {
+    "id": "cert-2",
+    "title": "FSSAI Food Safety License & Compliance Certificate",
+    "issuer": "Food Safety and Standards Authority of India",
+    "certificate_number": "FSSAI-10021022000849",
+    "issue_date": "2024 - 2029",
+    "summary": "Central license approval for specialized dietary electrolyte drink formulations and sachet packaging.",
+    "file_url": "/product/Label.jpg",
+    "badge": "FSSAI Certified",
+    "product_ids": [
+      "3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"
+    ]
+  },
+  {
+    "id": "cert-3",
+    "title": "WHO-GMP Good Manufacturing Practices Certificate",
+    "issuer": "Eurowiss Standard Quality Assurance",
+    "certificate_number": "GMP-IND-2024-991",
+    "issue_date": "December 2024",
+    "summary": "Certified ISO cleanroom processing ensuring zero cross-contamination and 100% batch consistency.",
+    "file_url": "/product/Cardio-explainig-image.jpg",
+    "badge": "WHO-GMP",
+    "product_ids": [
+      "3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"
+    ]
+  }
+]

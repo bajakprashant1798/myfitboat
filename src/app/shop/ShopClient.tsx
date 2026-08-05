@@ -23,9 +23,10 @@ export function ShopClient({ products }: { products: ProductSummary[] }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((p) => {
             return (
-              <div
+              <Link
                 key={p.id}
-                className="border border-border bg-surface flex flex-col justify-between hover:border-brand/40 transition-all group relative overflow-hidden"
+                href={`/products/${p.slug}`}
+                className="border border-border bg-surface flex flex-col justify-between hover:border-brand/40 transition-all group relative overflow-hidden cursor-pointer"
               >
                 {/* Image Section */}
                 <div className="p-8 bg-surface/50 border-b border-border flex items-center justify-center relative overflow-hidden h-[300px]">
@@ -105,15 +106,12 @@ export function ShopClient({ products }: { products: ProductSummary[] }) {
                       </div>
                     </div>
 
-                    <Link
-                      href={`/products/${p.slug}`}
-                      className="block w-full py-4 bg-brand text-brand-foreground font-display text-center text-sm uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors"
-                    >
+                    <div className="block w-full py-4 bg-brand text-brand-foreground font-display text-center text-sm uppercase tracking-wider group-hover:bg-foreground group-hover:text-background transition-colors">
                       View Formulation Details
-                    </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

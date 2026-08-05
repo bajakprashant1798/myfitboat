@@ -2,8 +2,19 @@
 
 import { useState } from "react";
 import { useCart } from "@/stores/cart";
-import { Star, Shield, HelpCircle, Activity, ChevronRight, Check } from "lucide-react";
-import type { ProductDetail } from "@/lib/products.functions";
+import {
+  Star,
+  Shield,
+  HelpCircle,
+  Activity,
+  ChevronRight,
+  Check,
+  Eye,
+  Download,
+  FileCheck,
+  X,
+} from "lucide-react";
+import type { ProductDetail, Certificate } from "@/lib/products.functions";
 import Link from "next/link";
 
 const inr = (n: number) =>
@@ -25,11 +36,18 @@ const PRODUCT_IMAGES = [
 export function ProductDetailClient({ product }: { product: ProductDetail }) {
   const addItem = useCart((s) => s.addItem);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
-  const [activeTab, setActiveTab] = useState<"overview" | "science" | "ingredients" | "usage">(
-    "overview",
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "science" | "ingredients" | "certificates" | "usage"
+  >("overview");
+  const [previewCert, setPreviewCert] = useState<Certificate | null>(null);
+  const certificates = product.certificates || [];
+  const rawVariants = product.variants || [];
+  const variants = rawVariants.filter(
+    (v, idx, self) =>
+      idx === self.findIndex((t) => t.name === v.name && t.price_inr === v.price_inr),
   );
   const [selectedVariant, setSelectedVariant] = useState(
-    product.variants.find((v) => v.is_default) ?? product.variants[0],
+    variants.find((v) => v.is_default) ?? variants[0],
   );
 
   const galleryImages =
@@ -164,7 +182,7 @@ export function ProductDetailClient({ product }: { product: ProductDetail }) {
                   Select Pack Configuration:
                 </div>
                 <div className="space-y-2">
-                  {product.variants.map((v) => {
+                  {variants.map((v) => {
                     const isSelected = selectedVariant.id === v.id;
                     return (
                       <button
@@ -240,12 +258,15 @@ export function ProductDetailClient({ product }: { product: ProductDetail }) {
               { id: "overview", label: "Overview" },
               { id: "science", label: "Electrolyte Science" },
               { id: "ingredients", label: "Ingredients breakdown" },
+              { id: "certificates", label: `Certificates (${certificates.length})` },
               { id: "usage", label: "How to use" },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() =>
-                  setActiveTab(tab.id as "overview" | "science" | "ingredients" | "usage")
+                  setActiveTab(
+                    tab.id as "overview" | "science" | "ingredients" | "certificates" | "usage",
+                  )
                 }
                 className={`px-6 py-4 transition-all shrink-0 cursor-pointer ${
                   activeTab === tab.id
@@ -383,6 +404,91 @@ export function ProductDetailClient({ product }: { product: ProductDetail }) {
               </div>
             )}
 
+            {/* CERTIFICATES TAB */}
+            {activeTab === "certificates" && (
+              <div className="space-y-8">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-brand mb-1">
+                    Quality Assurance & Verification
+                  </div>
+                  <h3 className="font-display text-3xl uppercase">Lab Certificates & Compliance</h3>
+                  <p className="text-sm text-muted-foreground max-w-2xl mt-2 leading-relaxed">
+                    Every batch of MyFitBoat is independently tested by NABL accredited laboratories
+                    for ingredient potency, heavy metal purity, and FSSAI / WHO-GMP compliance.
+                  </p>
+                </div>
+
+                {certificates.length === 0 ? (
+                  <div className="p-8 text-center border border-dashed border-border text-muted-foreground font-mono text-xs uppercase">
+                    No certificates linked to this product yet.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {certificates.map((cert) => (
+                      <div
+                        key={cert.id}
+                        className="bg-background border border-border p-6 flex flex-col justify-between rounded hover:border-brand/50 transition-all group shadow-xs"
+                      >
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2.5 py-1 bg-brand/10 text-brand border border-brand/30 font-mono text-[9px] font-bold uppercase tracking-wider rounded">
+                              {cert.badge || "Verified Test"}
+                            </span>
+                            <FileCheck className="size-4 text-brand" />
+                          </div>
+
+                          <div>
+                            <h4 className="font-display text-xl uppercase group-hover:text-brand transition-colors">
+                              {cert.title}
+                            </h4>
+                            <div className="font-mono text-xs text-muted-foreground mt-1 font-medium">
+                              {cert.issuer}
+                            </div>
+                          </div>
+
+                          <div className="bg-surface p-3 border border-border/60 rounded font-mono text-[11px] space-y-1 text-muted-foreground">
+                            <div className="flex justify-between">
+                              <span>Cert No:</span>
+                              <span className="text-foreground font-semibold">
+                                {cert.certificate_number}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Date:</span>
+                              <span className="text-foreground">{cert.issue_date}</span>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {cert.summary}
+                          </p>
+                        </div>
+
+                        <div className="pt-6 border-t border-border/40 mt-6 flex gap-2">
+                          <button
+                            onClick={() => setPreviewCert(cert)}
+                            className="flex-1 py-2.5 bg-brand text-brand-foreground font-display text-xs uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Eye className="size-3.5" />
+                            <span>View Report</span>
+                          </button>
+                          <a
+                            href={cert.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2.5 border border-border bg-surface text-foreground hover:border-brand transition-colors flex items-center justify-center cursor-pointer rounded"
+                            title="Download Certificate"
+                          >
+                            <Download className="size-3.5" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* USAGE TAB */}
             {activeTab === "usage" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -396,7 +502,7 @@ export function ProductDetailClient({ product }: { product: ProductDetail }) {
                           Tear and Pour
                         </h4>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Empty one 5g lemonade sachet into a glass or athletic shaker.
+                          Empty one 5g sachet into a glass or athletic shaker.
                         </p>
                       </div>
                     </div>
@@ -471,6 +577,64 @@ export function ProductDetailClient({ product }: { product: ProductDetail }) {
           </div>
         </section>
       </div>
+
+      {/* CERTIFICATE PREVIEW LIGHTBOX MODAL */}
+      {previewCert && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-surface border border-border max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 rounded shadow-2xl relative space-y-6">
+            <div className="flex justify-between items-start border-b border-border pb-4 pr-8">
+              <div>
+                <span className="px-2.5 py-0.5 bg-brand/10 text-brand border border-brand/30 font-mono text-[9px] font-bold uppercase tracking-wider rounded">
+                  {previewCert.badge || "Lab Verified"}
+                </span>
+                <h3 className="font-display text-2xl uppercase mt-2">{previewCert.title}</h3>
+                <div className="font-mono text-xs text-muted-foreground mt-0.5">
+                  Issued by: <strong className="text-foreground">{previewCert.issuer}</strong> ·
+                  Cert No:{" "}
+                  <strong className="text-foreground">{previewCert.certificate_number}</strong>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewCert(null)}
+                className="p-2 text-muted-foreground hover:text-foreground cursor-pointer rounded-full hover:bg-background/80 transition-colors"
+                aria-label="Close preview"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="bg-background border border-border p-4 flex items-center justify-center min-h-[300px] max-h-[500px] overflow-hidden rounded">
+              <img
+                src={previewCert.file_url}
+                alt={previewCert.title}
+                className="max-h-[450px] w-auto object-contain rounded drop-shadow-md"
+              />
+            </div>
+
+            <div className="space-y-2 font-mono text-xs">
+              <div className="text-muted-foreground">Verification Summary:</div>
+              <p className="text-foreground font-sans text-sm leading-relaxed bg-background p-4 border border-border rounded">
+                {previewCert.summary}
+              </p>
+            </div>
+
+            <div className="flex justify-between items-center pt-4 border-t border-border">
+              <span className="font-mono text-[10px] text-muted-foreground uppercase">
+                Date of Issue: {previewCert.issue_date}
+              </span>
+              <a
+                href={previewCert.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2.5 bg-brand text-brand-foreground font-display text-xs uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors flex items-center gap-2 rounded"
+              >
+                <Download className="size-3.5" />
+                <span>Open Full File</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -23,47 +23,55 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="sticky top-0 z-50 w-full bg-[var(--header-bg)] backdrop-blur-md border-b border-[var(--header-border)] shadow-xs transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-10">
           <Link href="/" className="flex items-center">
             {theme === "dark" ? (
               <img
-                src="/myfitboat_logo_white.png"
+                src="/myfitboat-light.png"
                 alt="MyFitBoat"
-                className="h-7 w-auto object-contain"
+                className="h-8.5 w-auto object-contain"
               />
             ) : (
               <img
-                src="/myfitboat_logo.png"
+                src="/myfitboat-dark.png"
                 alt="MyFitBoat"
-                className="h-7 w-auto object-contain"
+                className="h-8.5 w-auto object-contain"
               />
             )}
           </Link>
-          <div className="hidden lg:flex items-center gap-7 font-mono text-[11px] uppercase tracking-widest">
+          <div className="hidden lg:flex items-center gap-7 font-display text-[13px] font-bold uppercase tracking-wider">
             {links.map((link) => (
-              <Link key={link.href} href={link.href} className="hover:text-brand transition-colors">
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-brand transition-colors relative py-1 group"
+              >
                 {link.label}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand transition-all duration-300 group-hover:w-full" />
               </Link>
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-5 font-mono text-[11px] uppercase tracking-widest">
+        <div className="flex items-center gap-5 font-display text-[13px] font-bold uppercase tracking-wider">
           <button
             onClick={toggle}
             aria-label="Toggle theme"
-            className="hover:text-brand transition-colors cursor-pointer"
+            className="hover:text-brand transition-colors cursor-pointer p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
           >
-            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            {theme === "dark" ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
           </button>
           <button
             onClick={toggleCart}
-            className="hover:text-brand transition-colors flex items-center gap-2 cursor-pointer"
+            className="hover:text-brand transition-colors flex items-center gap-2 cursor-pointer bg-brand/10 hover:bg-brand/20 text-brand px-3 py-1.5 rounded-md transition-all"
             aria-label="Open cart"
           >
             <ShoppingBag className="size-4" />
-            <span>Cart ({count})</span>
+            <span>Cart</span>
+            <span className="bg-brand text-brand-foreground px-1.5 py-0.5 rounded-full text-[10px] font-mono leading-none">
+              {count}
+            </span>
           </button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

@@ -1,6 +1,8 @@
 "use server";
 
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Helper functions for Razorpay integration
@@ -333,7 +335,9 @@ export interface NewProductDetails {
 
 // Function to check if server-side Supabase environment keys are set up
 function hasServerConfig() {
-  return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return !!(url && key);
 }
 
 // Check admin password
@@ -1406,6 +1410,303 @@ export async function adminUploadImage(password: string, base64Data: string, fil
     return {
       success: false,
       error: err instanceof Error ? err.message : "Failed to upload image file.",
+    };
+  }
+}
+
+// ----------------------------------------------------
+// CERTIFICATE MANAGEMENT SERVER ACTIONS
+// ----------------------------------------------------
+
+export interface CertificateData {
+  id?: string;
+  title: string;
+  issuer: string;
+  certificate_number: string;
+  issue_date: string;
+  summary: string;
+  file_url: string;
+  badge?: string;
+  product_ids?: string[];
+}
+
+const CERT_STORAGE_FILE = path.join(process.cwd(), ".simulated_certificates.json");
+
+const initialSimulatedCertificates: CertificateData[] = [
+  {
+    id: "cert-1",
+    title: "Potassium Assay & Electrolyte Purity Report",
+    issuer: "Qualiset Testing Laboratories / NABL Accredited",
+    certificate_number: "COA-2025-550K",
+    issue_date: "January 2025",
+    summary:
+      "NABL lab assay confirming 550mg active Potassium Citrate per sachet with zero heavy metal contaminants.",
+    file_url: "/product/WhatsApp-Image-2025-09-08-at-15.24.57.png",
+    badge: "NABL Accredited",
+    product_ids: ["3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"],
+  },
+  {
+    id: "cert-2",
+    title: "FSSAI Food Safety License & Compliance Certificate",
+    issuer: "Food Safety and Standards Authority of India",
+    certificate_number: "FSSAI-10021022000849",
+    issue_date: "2024 - 2029",
+    summary:
+      "Central license approval for specialized dietary electrolyte drink formulations and sachet packaging.",
+    file_url: "/product/Label.jpg",
+    badge: "FSSAI Certified",
+    product_ids: ["3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"],
+  },
+  {
+    id: "cert-3",
+    title: "WHO-GMP Good Manufacturing Practices Certificate",
+    issuer: "Eurowiss Standard Quality Assurance",
+    certificate_number: "GMP-IND-2024-991",
+    issue_date: "December 2024",
+    summary:
+      "Certified ISO cleanroom processing ensuring zero cross-contamination and 100% batch consistency.",
+    file_url: "/product/Cardio-explainig-image.jpg",
+    badge: "WHO-GMP",
+    product_ids: ["3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"],
+  },
+];
+
+export async function loadSimulatedCertificates(): Promise<CertificateData[]> {
+  try {
+    if (fs.existsSync(CERT_STORAGE_FILE)) {
+      const content = fs.readFileSync(CERT_STORAGE_FILE, "utf-8");
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.error("[Certificates] Error reading simulated certificates file:", err);
+  }
+  return initialSimulatedCertificates;
+}
+
+function saveSimulatedCertificates(certs: CertificateData[]) {
+  try {
+    fs.writeFileSync(CERT_STORAGE_FILE, JSON.stringify(certs, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[Certificates] Error writing simulated certificates file:", err);
+  }
+}
+
+export async function adminGetCertificates(password: string) {
+  if (!verifyAdminPassword(password)) {
+    return { success: false, error: "Access Denied: Invalid credentials." };
+  }
+
+  if (!hasServerConfig()) {
+    const certs = await loadSimulatedCertificates();
+    return { success: true, certificates: certs };
+  }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: certs, error } = await (supabaseAdmin as any)
+      .from("certificates")
+      .select("*, product_certificates(product_id)")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const formatted = (certs || []).map((c: any) => ({
+      id: c.id,
+      title: c.title,
+      issuer: c.issuer,
+      certificate_number: c.certificate_number,
+      issue_date: c.issue_date,
+      summary: c.summary,
+      file_url: c.file_url,
+      badge: c.badge,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      product_ids: (c.product_certificates || []).map((pc: any) => pc.product_id),
+    }));
+
+    return { success: true, certificates: formatted };
+  } catch (err: unknown) {
+    console.error("[Admin Get Certificates] Supabase Error:", err);
+    const certs = await loadSimulatedCertificates();
+    return {
+      success: true,
+      certificates: certs,
+      isSimulatedFallback: true,
+    };
+  }
+}
+
+export async function adminSaveCertificate(
+  password: string,
+  data: CertificateData,
+  productIds: string[],
+) {
+  if (!verifyAdminPassword(password)) {
+    return { success: false, error: "Access Denied: Invalid credentials." };
+  }
+
+  if (!hasServerConfig()) {
+    const list = await loadSimulatedCertificates();
+    if (data.id) {
+      const idx = list.findIndex((c) => c.id === data.id);
+      if (idx !== -1) {
+        list[idx] = {
+          ...data,
+          product_ids: productIds,
+        };
+      } else {
+        list.unshift({ ...data, product_ids: productIds });
+      }
+    } else {
+      const newCert = {
+        ...data,
+        id: genMockUuid(),
+        product_ids: productIds,
+      };
+      list.unshift(newCert);
+    }
+    saveSimulatedCertificates(list);
+    return { success: true, isSimulated: true };
+  }
+
+  try {
+    let certId = data.id;
+
+    if (certId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateErr } = await (supabaseAdmin as any)
+        .from("certificates")
+        .update({
+          title: data.title,
+          issuer: data.issuer,
+          certificate_number: data.certificate_number,
+          issue_date: data.issue_date,
+          summary: data.summary,
+          file_url: data.file_url,
+          badge: data.badge || "Verified Test",
+        })
+        .eq("id", certId);
+
+      if (updateErr) throw updateErr;
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: newCert, error: insertErr } = await (supabaseAdmin as any)
+        .from("certificates")
+        .insert({
+          title: data.title,
+          issuer: data.issuer,
+          certificate_number: data.certificate_number,
+          issue_date: data.issue_date,
+          summary: data.summary,
+          file_url: data.file_url,
+          badge: data.badge || "Verified Test",
+        })
+        .select("id")
+        .single();
+
+      if (insertErr) throw insertErr;
+      certId = newCert.id;
+    }
+
+    // Update multi-product junction links
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabaseAdmin as any).from("product_certificates").delete().eq("certificate_id", certId);
+
+    if (productIds && productIds.length > 0) {
+      // Filter out non-UUID mock product IDs to prevent FK violations in PostgreSQL
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const validProductIds = productIds.filter((pId) => uuidRegex.test(pId));
+
+      if (validProductIds.length > 0) {
+        const links = validProductIds.map((pId) => ({
+          certificate_id: certId,
+          product_id: pId,
+        }));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: linkErr } = await (supabaseAdmin as any)
+          .from("product_certificates")
+          .insert(links);
+        if (linkErr) throw linkErr;
+      }
+    }
+
+    return { success: true, certId };
+  } catch (err: unknown) {
+    console.error("[Admin Save Certificate] Error:", err);
+    const msg = err instanceof Error ? err.message : "Error saving certificate.";
+    let userFriendlyError = msg;
+    if (msg.includes("relation") && msg.includes("does not exist")) {
+      userFriendlyError =
+        "Database table 'certificates' not found in Supabase. Please run the SQL migration script (supabase_certificates_migration.sql) in your Supabase SQL Editor.";
+    }
+
+    // Also fallback to saving locally so admin work is never lost!
+    const list = await loadSimulatedCertificates();
+    if (data.id) {
+      const idx = list.findIndex((c) => c.id === data.id);
+      if (idx !== -1) {
+        list[idx] = { ...data, product_ids: productIds };
+      } else {
+        list.unshift({ ...data, product_ids: productIds });
+      }
+    } else {
+      list.unshift({ ...data, id: genMockUuid(), product_ids: productIds });
+    }
+    saveSimulatedCertificates(list);
+
+    return {
+      success: true,
+      isSimulatedFallback: true,
+      warning: userFriendlyError,
+    };
+  }
+}
+
+export async function adminDeleteCertificate(password: string, certId: string) {
+  if (!verifyAdminPassword(password)) {
+    return { success: false, error: "Access Denied: Invalid credentials." };
+  }
+
+  if (!hasServerConfig()) {
+    const list = await loadSimulatedCertificates();
+    const idx = list.findIndex((c) => c.id === certId);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+      saveSimulatedCertificates(list);
+      return { success: true, isSimulated: true };
+    }
+    return { success: false, error: "Certificate not found." };
+  }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin as any).from("certificates").delete().eq("id", certId);
+    if (error) throw error;
+
+    // Also remove from local fallback file if present
+    const list = await loadSimulatedCertificates();
+    const idx = list.findIndex((c) => c.id === certId);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+      saveSimulatedCertificates(list);
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[Admin Delete Certificate] Error:", err);
+    // Fallback to local file deletion
+    const list = await loadSimulatedCertificates();
+    const idx = list.findIndex((c) => c.id === certId);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+      saveSimulatedCertificates(list);
+      return { success: true, isSimulatedFallback: true };
+    }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Error deleting certificate.",
     };
   }
 }

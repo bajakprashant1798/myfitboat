@@ -48,30 +48,43 @@ export function HomeClient({ product }: { product: ProductDetail }) {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="flex-1 p-8 md:p-16 flex flex-col justify-center"
         >
-          <div className="font-mono text-brand text-[12px] uppercase tracking-[0.3em] mb-6">
-            NEWLY LAUNCHED / 001
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <span className="font-mono text-brand text-[11px] uppercase tracking-[0.25em] font-semibold">
+              NEWLY LAUNCHED / 001
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+              🍋 Lemonade
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider font-semibold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+              🍓 Fruit Punch
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider font-semibold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+              🫐 Berry Mix
+            </span>
           </div>
           <h1 className="font-display text-5xl md:text-7xl xl:text-8xl leading-[0.85] tracking-tight uppercase text-balance mb-8">
             India's First
             <br />
-            Potassium <span className="text-brand">Rich</span>
+            Potassium <span className="text-gradient-brand">Rich</span>
             <br />
-            Electrolyte Drink
+            <span className="text-foreground">Electrolyte</span>{" "}
+            <span className="text-gradient-fruit-mix">Drink</span>
           </h1>
           <p className="max-w-[45ch] text-base md:text-lg text-muted-foreground mb-10 text-pretty">
             Scientifically balanced ratio (1:1 or less) of Sodium and Potassium. Engineered with
-            550mg Potassium for peak cardiac and muscle output — zero sugar, obviously tasty.
+            550mg Potassium for peak cardiac and muscle output — zero sugar, packed with real fruit
+            flavor.
           </p>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-            <button
-              onClick={onAddToCart}
-              className="px-10 py-5 bg-brand text-brand-foreground font-display text-xl uppercase tracking-wider hover:bg-foreground hover:text-background transition-all cursor-pointer"
+            <Link
+              href="/shop"
+              className="px-10 py-5 bg-brand text-brand-foreground font-display text-xl uppercase tracking-wider hover:bg-foreground hover:text-background transition-all cursor-pointer inline-block text-center shadow-md hover:shadow-lg"
             >
-              Add to Cart — {inr(defaultVariant?.price_inr ?? product.price_inr)}
-            </button>
+              Buy Now
+            </Link>
             <Link
               href={`/products/${product.slug}`}
-              className="font-mono text-[11px] uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity self-center text-center sm:text-left"
+              className="font-display text-[12px] font-bold uppercase tracking-wider opacity-70 hover:opacity-100 transition-opacity self-center text-center sm:text-left hover:text-brand"
             >
               Full product details →
             </Link>
@@ -79,16 +92,16 @@ export function HomeClient({ product }: { product: ProductDetail }) {
         </motion.div>
 
         <div className="flex-1 bg-surface relative overflow-hidden grid place-items-center p-8">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,oklch(0.82_0.16_84/0.10)_0%,transparent_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,151,24,0.12)_0%,transparent_70%)]" />
           <motion.img
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            src="/product-with-lamon.png" // Real sachet box and lemon image from public folder
-            alt={`${product.name} packaging`}
+            src="/product/lemon/lemon_sachet.png"
+            alt={`${product.name} sachet`}
             width={1024}
             height={1280}
-            className="relative z-10 max-h-[70dvh] w-auto object-contain drop-shadow-[0_30px_60px_rgba(238,186,26,0.15)]"
+            className="relative z-10 max-h-[72dvh] w-auto object-contain drop-shadow-[0_25px_50px_rgba(45,151,24,0.22)]"
           />
         </div>
       </section>
@@ -96,14 +109,20 @@ export function HomeClient({ product }: { product: ProductDetail }) {
       {/* TRUST / METRICS */}
       <div className="border-b border-border grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
         {[
-          ["FSSAI License", "Elite Nutriscience"],
-          ["WHO - GMP", "Eurowiss Certified"],
-          ["Purity Standard", "Qualiset Tested"],
-          ["Sweetened", "100% Zero Sugar"],
-        ].map(([k, v]) => (
-          <div key={v} className="p-6 flex flex-col items-center gap-2 text-center">
-            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              {k}
+          ["FSSAI License", "Elite Nutriscience", "bg-emerald-500", "border-t-emerald-500"],
+          ["WHO - GMP", "Eurowiss Certified", "bg-amber-500", "border-t-amber-500"],
+          ["Purity Standard", "Qualiset Tested", "bg-purple-500", "border-t-purple-500"],
+          ["Sweetened", "100% Zero Sugar", "bg-rose-500", "border-t-rose-500"],
+        ].map(([k, v, dotBg, borderTop]) => (
+          <div
+            key={v}
+            className={`p-6 flex flex-col items-center gap-2 text-center border-t-2 ${borderTop}`}
+          >
+            <div className="flex items-center gap-2">
+              <span className={`size-2 rounded-full ${dotBg}`} />
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {k}
+              </span>
             </div>
             <div className="font-display text-lg uppercase">{v}</div>
           </div>
@@ -118,13 +137,22 @@ export function HomeClient({ product }: { product: ProductDetail }) {
             <br />
             Benefits
           </h2>
-          <div className="font-mono text-[11px] uppercase tracking-tighter text-right hidden md:block">
+          <div className="font-mono text-[11px] uppercase tracking-tighter text-right hidden md:block opacity-80">
             Standard Formulation: V1.1
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
           {product.benefits.map((b, i) => {
             const Icon = ICONS[b.icon ?? "droplet"] ?? Droplet;
+            const accentColors = [
+              "border-emerald-500 text-emerald-400",
+              "border-amber-400 text-amber-300",
+              "border-rose-500 text-rose-400",
+              "border-purple-400 text-purple-300",
+              "border-orange-500 text-orange-400",
+              "border-teal-400 text-teal-300",
+            ];
+            const colorClass = accentColors[i % accentColors.length];
             return (
               <motion.div
                 key={b.id}
@@ -132,14 +160,16 @@ export function HomeClient({ product }: { product: ProductDetail }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05, duration: 0.6 }}
-                className="border-t-2 border-background pt-6"
+                className={`border-t-2 ${colorClass.split(" ")[0]} pt-6`}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <span className="font-mono text-sm">[{String(i + 1).padStart(2, "0")}]</span>
-                  <Icon className="size-5" />
+                  <span className="font-mono text-sm opacity-80">
+                    [{String(i + 1).padStart(2, "0")}]
+                  </span>
+                  <Icon className={`size-5 ${colorClass.split(" ")[1]}`} />
                 </div>
                 <h3 className="font-display text-2xl uppercase mb-3">{b.title}</h3>
-                <p className="text-sm leading-relaxed opacity-70">{b.description}</p>
+                <p className="text-sm leading-relaxed opacity-75">{b.description}</p>
               </motion.div>
             );
           })}
@@ -162,10 +192,12 @@ export function HomeClient({ product }: { product: ProductDetail }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto pt-6">
             {/* Banana */}
-            <div className="border border-border bg-background p-6 rounded flex flex-col justify-between items-center space-y-4">
-              <Apple className="size-8 text-muted-foreground/60" />
+            <div className="border border-amber-500/30 bg-amber-500/5 p-6 rounded flex flex-col justify-between items-center space-y-4">
+              <div className="p-3 bg-amber-500/10 rounded-full">
+                <Apple className="size-7 text-amber-600 dark:text-amber-400" />
+              </div>
               <div>
-                <div className="font-mono text-[9px] uppercase text-muted-foreground">
+                <div className="font-mono text-[9px] uppercase text-amber-700 dark:text-amber-400 font-semibold">
                   Standard Medium Banana
                 </div>
                 <div className="font-display text-3xl uppercase text-foreground mt-1">
@@ -173,15 +205,20 @@ export function HomeClient({ product }: { product: ProductDetail }) {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground leading-normal">
-                Slow absorption, contains fructose (sucrose/sugars), causing calorie loads during
-                active runs.
+                Slow absorption, contains fructose (sucrose/sugars), causing heavy calorie loads
+                during active workouts.
               </p>
             </div>
             {/* Our Sachet */}
-            <div className="border border-brand bg-brand/5 p-6 rounded flex flex-col justify-between items-center space-y-4 shadow-[0_0_20px_oklch(0.82_0.16_84/0.04)]">
-              <Heart className="size-8 text-brand" />
+            <div className="border-2 border-brand bg-brand/5 p-6 rounded flex flex-col justify-between items-center space-y-4 shadow-md relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-gradient-fruit-mix text-white font-mono text-[9px] font-bold px-3 py-1 uppercase tracking-widest rounded-bl">
+                Multi-Flavor
+              </div>
+              <div className="p-3 bg-brand/10 rounded-full">
+                <Heart className="size-7 text-brand" />
+              </div>
               <div>
-                <div className="font-mono text-[9px] uppercase text-brand">
+                <div className="font-mono text-[10px] uppercase text-brand font-bold">
                   MyFitBoat Single Sachet
                 </div>
                 <div className="font-display text-3xl uppercase text-brand mt-1">
@@ -189,8 +226,8 @@ export function HomeClient({ product }: { product: ProductDetail }) {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground leading-normal">
-                Rapid intracellular osmosis, zero sugar, zero carbs, fortified with B-vitamins and
-                zinc.
+                Rapid intracellular osmosis, zero sugar, zero carbs, fortified with B-vitamins, Zinc
+                & real fruit extract.
               </p>
             </div>
           </div>
@@ -315,12 +352,12 @@ export function HomeClient({ product }: { product: ProductDetail }) {
           Join thousands of athletes who've upgraded their hydration. Free shipping across India on
           orders over ₹999.
         </p>
-        <button
-          onClick={onAddToCart}
-          className="px-10 py-5 bg-brand text-brand-foreground font-display text-xl uppercase tracking-wider hover:bg-foreground hover:text-background transition-all cursor-pointer"
+        <Link
+          href="/shop"
+          className="px-10 py-5 bg-brand text-brand-foreground font-display text-xl uppercase tracking-wider hover:bg-foreground hover:text-background transition-all cursor-pointer inline-block text-center shadow-md hover:shadow-lg"
         >
-          Add to Cart — {inr(defaultVariant?.price_inr ?? product.price_inr)}
-        </button>
+          Buy Now
+        </Link>
       </section>
     </div>
   );

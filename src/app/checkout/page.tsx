@@ -167,7 +167,7 @@ export default function CheckoutPage() {
             currency: rzpOrder.currency,
             name: "MyFitBoat",
             description: "Zero Sugar Lemonade / Electrolyte Checkout",
-            image: "/logo.png",
+            image: "/myfitboat-dark.png",
             order_id: rzpOrder.orderId,
             handler: async function (response: {
               razorpay_order_id: string;

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { loadSimulatedCertificates } from "@/app/checkout/actions";
 
 export interface ProductSummary {
   id: string;
@@ -10,6 +11,18 @@ export interface ProductSummary {
   compare_at_price_inr: number | null;
   image_url: string | null;
   badges: string[];
+}
+
+export interface Certificate {
+  id: string;
+  title: string;
+  issuer: string;
+  certificate_number: string;
+  issue_date: string;
+  summary: string;
+  file_url: string;
+  badge?: string;
+  product_ids?: string[];
 }
 
 export interface ProductDetail extends ProductSummary {
@@ -44,7 +57,47 @@ export interface ProductDetail extends ProductSummary {
     verified: boolean;
     is_featured: boolean;
   }>;
+  certificates?: Certificate[];
 }
+
+export const MOCK_CERTIFICATES: Certificate[] = [
+  {
+    id: "cert-1",
+    title: "Potassium Assay & Electrolyte Purity Report",
+    issuer: "Qualiset Testing Laboratories / NABL Accredited",
+    certificate_number: "COA-2025-550K",
+    issue_date: "January 2025",
+    summary:
+      "NABL lab assay confirming 550mg active Potassium Citrate per sachet with zero heavy metal contaminants.",
+    file_url: "/product/WhatsApp-Image-2025-09-08-at-15.24.57.png",
+    badge: "NABL Accredited",
+    product_ids: ["3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"],
+  },
+  {
+    id: "cert-2",
+    title: "FSSAI Food Safety License & Compliance Certificate",
+    issuer: "Food Safety and Standards Authority of India",
+    certificate_number: "FSSAI-10021022000849",
+    issue_date: "2024 - 2029",
+    summary:
+      "Central license approval for specialized dietary electrolyte drink formulations and sachet packaging.",
+    file_url: "/product/Label.jpg",
+    badge: "FSSAI Certified",
+    product_ids: ["3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"],
+  },
+  {
+    id: "cert-3",
+    title: "WHO-GMP Good Manufacturing Practices Certificate",
+    issuer: "Eurowiss Standard Quality Assurance",
+    certificate_number: "GMP-IND-2024-991",
+    issue_date: "December 2024",
+    summary:
+      "Certified ISO cleanroom processing ensuring zero cross-contamination and 100% batch consistency.",
+    file_url: "/product/Cardio-explainig-image.jpg",
+    badge: "WHO-GMP",
+    product_ids: ["3ff50b4a-2f7a-4146-b09b-cd5bb3e48284"],
+  },
+];
 
 // Exact content and assets from myfitboat.com
 export const MOCK_PRODUCT: ProductDetail = {
@@ -264,6 +317,7 @@ export const MOCK_PRODUCT: ProductDetail = {
       is_featured: true,
     },
   ],
+  certificates: MOCK_CERTIFICATES,
 };
 
 function hasSupabaseConfig() {
@@ -333,17 +387,64 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
       supabase.from("reviews").select("*").eq("product_id", product.id).order("sort_order"),
     ]);
 
+    let dbCertificates: Certificate[] = [];
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: certLinks } = await (supabase as any)
+        .from("product_certificates")
+        .select("certificate_id, certificates(*)")
+        .eq("product_id", product.id);
+
+      if (certLinks && certLinks.length > 0) {
+        dbCertificates = certLinks
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((item: any) => item.certificates)
+          .filter(Boolean);
+      }
+    } catch {
+      // Fallback if table doesn't exist yet
+    }
+
+    if (dbCertificates.length === 0) {
+      try {
+        const simulated = await loadSimulatedCertificates();
+        dbCertificates = simulated.filter(
+          (c) =>
+            !c.product_ids ||
+            c.product_ids.length === 0 ||
+            c.product_ids.includes(product.id) ||
+            slug === "zero-sugar-lemonade",
+        ) as Certificate[];
+      } catch {
+        // Fallback if file read fails
+      }
+    }
+
     const isLemonade = slug === "zero-sugar-lemonade";
+    const finalCertificates =
+      dbCertificates.length > 0 ? dbCertificates : isLemonade ? MOCK_CERTIFICATES : [];
+
+    const rawVariants =
+      variants.data && variants.data.length > 0
+        ? variants.data
+        : isLemonade
+          ? MOCK_PRODUCT.variants
+          : [];
+
+    const uniqueVariants: typeof rawVariants = [];
+    const seenVariantKeys = new Set<string>();
+    for (const v of rawVariants) {
+      const key = `${v.name}-${v.price_inr}`.toLowerCase().trim();
+      if (!seenVariantKeys.has(key)) {
+        seenVariantKeys.add(key);
+        uniqueVariants.push(v);
+      }
+    }
 
     return {
       ...product,
       badges: (product.badges as string[]) ?? [],
-      variants:
-        variants.data && variants.data.length > 0
-          ? variants.data
-          : isLemonade
-            ? MOCK_PRODUCT.variants
-            : [],
+      variants: uniqueVariants,
       ingredients:
         ingredients.data && ingredients.data.length > 0
           ? ingredients.data
@@ -363,6 +464,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
           : isLemonade
             ? MOCK_PRODUCT.reviews
             : [],
+      certificates: finalCertificates,
     } as ProductDetail;
   } catch (err) {
     console.warn(`[Supabase Fallback] Error fetching product ${slug}, using mock:`, err);
