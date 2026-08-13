@@ -9,25 +9,42 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
-    const saved = (typeof window !== "undefined" &&
-      localStorage.getItem("mfb-theme")) as Theme | null;
-    if (saved === "dark" || saved === "light") setTheme(saved);
+    if (typeof window === "undefined") return;
+
+    const saved = localStorage.getItem("mfb-theme") as Theme | null;
+
+    if (saved === "dark" || saved === "light") {
+      setTheme(saved);
+    } else {
+      // Determine initial theme based on system preference
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      setTheme(mediaQuery.matches ? "dark" : "light");
+
+      // Listen for system theme changes if no explicit user preference is set
+      const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+        if (!localStorage.getItem("mfb-theme")) {
+          setTheme(e.matches ? "dark" : "light");
+        }
+      };
+
+      mediaQuery.addEventListener("change", handleSystemThemeChange);
+      return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
+    }
   }, []);
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
-    localStorage.setItem("mfb-theme", theme);
   }, [theme]);
 
-  return (
-    <ThemeContext.Provider
-      value={{ theme, toggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")) }}
-    >
-      {children}
-    </ThemeContext.Provider>
-  );
+  const toggle = () => {
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("mfb-theme", nextTheme);
+  };
+
+  return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
