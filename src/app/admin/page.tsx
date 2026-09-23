@@ -34,6 +34,10 @@ import {
   Edit,
   ExternalLink,
   Shield,
+  GripVertical,
+  ChevronLeft,
+  ChevronRight,
+  Star,
 } from "lucide-react";
 
 const inr = (n: number) =>
@@ -106,6 +110,11 @@ export default function AdminPage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+
+  // Product gallery drag-and-drop reorder state
+  const [draggedImageIdx, setDraggedImageIdx] = useState<number | null>(null);
+  const [dragOverImageIdx, setDragOverImageIdx] = useState<number | null>(null);
+  const [isGalleryDropTarget, setIsGalleryDropTarget] = useState(false);
 
   // Retrieve auth state from sessionStorage on load
   useEffect(() => {
@@ -350,65 +359,125 @@ export default function AdminPage() {
       });
   };
 
-  const handleImageUpload = (
+  const processAndUploadFile = async (file: File): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(null);
+            return;
+          }
+
+          const MAX_WIDTH = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const base64 = canvas.toDataURL("image/webp", 0.85);
+
+          adminUploadImage(password, base64, file.name.replace(/\.[^/.]+$/, "") + ".webp")
+            .then((res) => {
+              if (res.success && res.publicUrl) {
+                resolve(res.publicUrl);
+              } else {
+                alert(res.error || `Failed to upload ${file.name}.`);
+                resolve(null);
+              }
+            })
+            .catch((err) => {
+              console.error(err);
+              alert(`Error uploading ${file.name}.`);
+              resolve(null);
+            });
+        };
+        img.onerror = () => resolve(null);
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleMultipleGalleryUpload = async (files: FileList | File[]) => {
+    if (!files || files.length === 0) return;
+    setIsUploadingImage(true);
+    const uploadedUrls: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type.startsWith("image/")) {
+        const url = await processAndUploadFile(file);
+        if (url) uploadedUrls.push(url);
+      }
+    }
+    setIsUploadingImage(false);
+    if (uploadedUrls.length > 0) {
+      setEditingProduct((prev) => {
+        const currentGallery = prev?.gallery || [];
+        const nextGallery = [...currentGallery, ...uploadedUrls];
+        const nextImageUrl = prev?.image_url || nextGallery[0] || "";
+        return {
+          ...prev,
+          gallery: nextGallery,
+          image_url: nextImageUrl,
+        };
+      });
+    }
+  };
+
+  const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "primary" | "gallery",
   ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    setIsUploadingImage(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          setIsUploadingImage(false);
-          alert("Browser canvas context not available.");
-          return;
-        }
+    if (type === "primary") {
+      const file = files[0];
+      setIsUploadingImage(true);
+      const url = await processAndUploadFile(file);
+      setIsUploadingImage(false);
+      if (url) {
+        setEditingProduct((prev) => ({ ...prev, image_url: url }));
+      }
+    } else {
+      await handleMultipleGalleryUpload(files);
+    }
+    e.target.value = "";
+  };
 
-        const MAX_WIDTH = 1200;
-        let width = img.width;
-        let height = img.height;
-        if (width > MAX_WIDTH) {
-          height = Math.round((height * MAX_WIDTH) / width);
-          width = MAX_WIDTH;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const base64 = canvas.toDataURL("image/webp", 0.85);
-
-        adminUploadImage(password, base64, file.name.replace(/\.[^/.]+$/, "") + ".webp")
-          .then((res) => {
-            setIsUploadingImage(false);
-            if (res.success && res.publicUrl) {
-              if (type === "primary") {
-                setEditingProduct((prev) => ({ ...prev, image_url: res.publicUrl }));
-              } else {
-                setEditingProduct((prev) => ({
-                  ...prev,
-                  gallery: [...(prev?.gallery || []), res.publicUrl],
-                }));
-              }
-            } else {
-              alert(res.error || "Failed to upload image.");
-            }
-          })
-          .catch((err) => {
-            setIsUploadingImage(false);
-            console.error(err);
-            alert("Error uploading file.");
-          });
+  const moveGalleryImage = (fromIdx: number, toIdx: number) => {
+    setEditingProduct((prev) => {
+      const currentGallery = [...(prev?.gallery || [])];
+      if (
+        fromIdx < 0 ||
+        fromIdx >= currentGallery.length ||
+        toIdx < 0 ||
+        toIdx >= currentGallery.length
+      ) {
+        return prev;
+      }
+      const [movedItem] = currentGallery.splice(fromIdx, 1);
+      currentGallery.splice(toIdx, 0, movedItem);
+      return {
+        ...prev,
+        gallery: currentGallery,
       };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    });
+  };
+
+  const setAsPrimaryGalleryImage = (idx: number) => {
+    moveGalleryImage(idx, 0);
   };
 
   if (!isAuthorized) {
@@ -1170,11 +1239,30 @@ export default function AdminPage() {
 
                 {/* PRIMARY IMAGE UPLOAD CONVERTER */}
                 <div className="space-y-3">
-                  <label className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
-                    Primary box image
-                  </label>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+                      Primary box thumbnail
+                    </label>
+                    {editingProduct.gallery && editingProduct.gallery.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (editingProduct.gallery?.[0]) {
+                            setEditingProduct((prev) => ({
+                              ...prev,
+                              image_url: prev?.gallery?.[0],
+                            }));
+                          }
+                        }}
+                        className="font-mono text-[11px] text-brand hover:underline cursor-pointer flex items-center gap-1 uppercase"
+                      >
+                        <Star className="size-3" />
+                        Sync with #1 Gallery Image
+                      </button>
+                    )}
+                  </div>
                   <div className="flex gap-4 items-center">
-                    <div className="size-24 border border-border bg-background flex items-center justify-center overflow-hidden">
+                    <div className="size-24 border border-border bg-background flex items-center justify-center overflow-hidden rounded">
                       {editingProduct.image_url ? (
                         <img
                           src={editingProduct.image_url}
@@ -1188,7 +1276,7 @@ export default function AdminPage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <label className="inline-flex items-center gap-2 px-3 py-2 border border-border bg-surface hover:border-brand hover:text-brand font-sans text-xs font-semibold uppercase tracking-wider cursor-pointer">
+                      <label className="inline-flex items-center gap-2 px-3 py-2 border border-border bg-surface hover:border-brand hover:text-brand font-sans text-xs font-semibold uppercase tracking-wider cursor-pointer rounded transition-colors">
                         <Upload className="size-3.5" />
                         <span>Upload Primary Image</span>
                         <input
@@ -1205,45 +1293,209 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* GALLERY CAROUSEL IMAGES UPLOAD CONVERTER */}
+                {/* GALLERY CAROUSEL IMAGES UPLOAD CONVERTER WITH DRAG-AND-DROP REORDER */}
                 <div className="space-y-3">
-                  <label className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
-                    Formulation carousel gallery images
-                  </label>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                      {editingProduct.gallery?.map((url, idx) => (
-                        <div
-                          key={idx}
-                          className="relative size-16 border border-border bg-background group"
-                        >
-                          <img
-                            src={url}
-                            alt={`Gallery ${idx}`}
-                            className="size-full object-contain"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingProduct((prev) => ({
-                                ...prev,
-                                gallery: (prev?.gallery || []).filter((_, i) => i !== idx),
-                              }));
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+                        Product Gallery & Carousel Images
+                      </label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <span className="font-bold text-foreground">Drag & drop</span> cards to
+                        reorder. The{" "}
+                        <span className="text-brand font-semibold font-mono">#1 Cover</span> is the
+                        first image shown on the product page.
+                      </p>
+                    </div>
+                    <span className="font-mono text-[11px] text-muted-foreground">
+                      {editingProduct.gallery?.length || 0} image
+                      {(editingProduct.gallery?.length || 0) === 1 ? "" : "s"}
+                    </span>
+                  </div>
+
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (!isGalleryDropTarget) setIsGalleryDropTarget(true);
+                    }}
+                    onDragLeave={() => setIsGalleryDropTarget(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsGalleryDropTarget(false);
+                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        handleMultipleGalleryUpload(e.dataTransfer.files);
+                      }
+                    }}
+                    className={`p-4 border rounded-md transition-all duration-200 ${
+                      isGalleryDropTarget
+                        ? "border-brand bg-brand/5 ring-2 ring-brand/30"
+                        : "border-border bg-surface/30"
+                    }`}
+                  >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+                      {editingProduct.gallery?.map((url, idx) => {
+                        const isDragging = draggedImageIdx === idx;
+                        const isDropTarget = dragOverImageIdx === idx;
+                        const isFirst = idx === 0;
+                        const isLast = idx === (editingProduct.gallery?.length || 1) - 1;
+
+                        return (
+                          <div
+                            key={`${url}-${idx}`}
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedImageIdx(idx);
+                              e.dataTransfer.setData("text/plain", idx.toString());
+                              e.dataTransfer.effectAllowed = "move";
                             }}
-                            className="absolute -top-1.5 -right-1.5 size-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow"
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = "move";
+                              if (dragOverImageIdx !== idx) {
+                                setDragOverImageIdx(idx);
+                              }
+                            }}
+                            onDragLeave={() => {
+                              if (dragOverImageIdx === idx) {
+                                setDragOverImageIdx(null);
+                              }
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedImageIdx !== null && draggedImageIdx !== idx) {
+                                moveGalleryImage(draggedImageIdx, idx);
+                              }
+                              setDraggedImageIdx(null);
+                              setDragOverImageIdx(null);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedImageIdx(null);
+                              setDragOverImageIdx(null);
+                            }}
+                            className={`relative flex flex-col bg-background border rounded overflow-hidden group select-none transition-all duration-150 ${
+                              isFirst
+                                ? "border-brand ring-1 ring-brand/40 shadow-sm"
+                                : "border-border hover:border-border/80"
+                            } ${
+                              isDragging
+                                ? "opacity-30 scale-95 border-dashed border-brand"
+                                : "opacity-100"
+                            } ${
+                              isDropTarget && !isDragging
+                                ? "ring-2 ring-brand border-brand scale-102 bg-brand/5"
+                                : ""
+                            }`}
                           >
-                            <X className="size-3" />
-                          </button>
-                        </div>
-                      ))}
-                      <label className="size-16 border border-border border-dashed bg-background flex flex-col items-center justify-center hover:border-brand text-muted-foreground hover:text-brand cursor-pointer">
-                        <Plus className="size-4" />
-                        <span className="font-sans text-[10px] uppercase tracking-wider mt-1">
-                          Add Image
-                        </span>
+                            {/* TOP BAR: ORDER BADGE, GRIP & DELETE BUTTON */}
+                            <div className="p-1.5 flex items-center justify-between bg-surface/80 border-b border-border/50 text-[10px] font-mono">
+                              <div className="flex items-center gap-1">
+                                <span
+                                  className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-0.5"
+                                  title="Click and drag to reorder"
+                                >
+                                  <GripVertical className="size-3.5" />
+                                </span>
+                                {isFirst ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-brand text-brand-foreground font-bold tracking-wider uppercase text-[9px] flex items-center gap-0.5">
+                                    <Star className="size-2.5 fill-current" />
+                                    #1 Cover
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded bg-surface border border-border text-muted-foreground font-semibold">
+                                    #{idx + 1}
+                                  </span>
+                                )}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingProduct((prev) => ({
+                                    ...prev,
+                                    gallery: (prev?.gallery || []).filter((_, i) => i !== idx),
+                                  }));
+                                }}
+                                className="size-5 rounded hover:bg-destructive hover:text-destructive-foreground text-muted-foreground flex items-center justify-center transition-colors cursor-pointer"
+                                title="Remove Image"
+                              >
+                                <Trash2 className="size-3" />
+                              </button>
+                            </div>
+
+                            {/* IMAGE PREVIEW */}
+                            <div className="aspect-square p-2 flex items-center justify-center bg-background/50 relative cursor-grab active:cursor-grabbing">
+                              <img
+                                src={url}
+                                alt={`Gallery ${idx + 1}`}
+                                className="size-full object-contain pointer-events-none"
+                              />
+                            </div>
+
+                            {/* BOTTOM REORDER CONTROLS */}
+                            <div className="p-1.5 bg-surface/80 border-t border-border/50 flex items-center justify-between gap-1 text-[10px]">
+                              <div className="flex items-center gap-0.5">
+                                <button
+                                  type="button"
+                                  disabled={isFirst}
+                                  onClick={() => moveGalleryImage(idx, idx - 1)}
+                                  className="p-1 rounded border border-border bg-background hover:border-brand hover:text-brand disabled:opacity-20 disabled:hover:border-border disabled:hover:text-muted-foreground disabled:cursor-not-allowed cursor-pointer transition-colors"
+                                  title="Move backward (Left)"
+                                >
+                                  <ChevronLeft className="size-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isLast}
+                                  onClick={() => moveGalleryImage(idx, idx + 1)}
+                                  className="p-1 rounded border border-border bg-background hover:border-brand hover:text-brand disabled:opacity-20 disabled:hover:border-border disabled:hover:text-muted-foreground disabled:cursor-not-allowed cursor-pointer transition-colors"
+                                  title="Move forward (Right)"
+                                >
+                                  <ChevronRight className="size-3" />
+                                </button>
+                              </div>
+
+                              {!isFirst && (
+                                <button
+                                  type="button"
+                                  onClick={() => setAsPrimaryGalleryImage(idx)}
+                                  className="px-1.5 py-0.5 rounded border border-brand/40 bg-brand/10 hover:bg-brand hover:text-brand-foreground text-brand text-[9px] font-mono font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                                  title="Move to 1st place as primary cover image"
+                                >
+                                  Make #1
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* ADD / UPLOAD IMAGES CARD */}
+                      <label className="aspect-square border-2 border-border border-dashed bg-background/60 hover:bg-brand/5 hover:border-brand rounded flex flex-col items-center justify-center text-muted-foreground hover:text-brand cursor-pointer p-4 transition-all group min-h-[140px]">
+                        {isUploadingImage ? (
+                          <>
+                            <Loader2 className="size-6 animate-spin text-brand mb-2" />
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-center">
+                              Uploading...
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="size-8 rounded-full bg-surface group-hover:bg-brand/10 flex items-center justify-center mb-2 transition-colors">
+                              <Plus className="size-4 group-hover:scale-110 transition-transform" />
+                            </div>
+                            <span className="font-sans text-xs font-semibold uppercase tracking-wider text-center">
+                              Add Images
+                            </span>
+                            <span className="font-mono text-[9px] text-muted-foreground text-center mt-1">
+                              Select or drop files
+                            </span>
+                          </>
+                        )}
                         <input
                           type="file"
                           accept="image/*"
+                          multiple
+                          disabled={isUploadingImage}
                           className="hidden"
                           onChange={(e) => handleImageUpload(e, "gallery")}
                         />

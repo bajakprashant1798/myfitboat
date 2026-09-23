@@ -45,67 +45,67 @@
   --color-ink: var(--ink);
 
   /* Multi-Flavor Color Tokens (Derived from Lemon & Mix Fruit Punch Packaging) */
-  --color-citrus-yellow: #F59E0B;
-  --color-sunburst-gold: #FFC700;
-  --color-punch-red: #E61C40;
-  --color-punch-pink: #FF3D74;
-  --color-berry-purple: #8B5CF6;
-  --color-mango-orange: #FF7A00;
-  --color-tropical-teal: #0D9488;
+  --color-citrus-yellow: #f59e0b;
+  --color-sunburst-gold: #ffc700;
+  --color-punch-red: #e61c40;
+  --color-punch-pink: #ff3d74;
+  --color-berry-purple: #8b5cf6;
+  --color-mango-orange: #ff7a00;
+  --color-tropical-teal: #0d9488;
 
   --font-display: "Outfit", "Plus Jakarta Sans", sans-serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
   --shadow-glow: 0 0 60px -15px var(--brand);
-  --shadow-lemon-glow: 0 0 60px -15px #FFD83B;
-  --shadow-punch-glow: 0 0 60px -15px #FF3D74;
-  --shadow-berry-glow: 0 0 60px -15px #8B5CF6;
+  --shadow-lemon-glow: 0 0 60px -15px #ffd83b;
+  --shadow-punch-glow: 0 0 60px -15px #ff3d74;
+  --shadow-berry-glow: 0 0 60px -15px #8b5cf6;
 }
 
 /* DEFAULT = LIGHT MODE (Bright, Fresh, Multi-Flavor Athletic Aesthetic) */
 :root {
   --radius: 0.5rem;
 
-  --background: #FFFFFF;
+  --background: #ffffff;
   --foreground: #111111;
-  --surface: #F8FAF8;
-  --surface-2: #EAF8E5;
+  --surface: #f8faf8;
+  --surface-2: #eaf8e5;
   --ink: #111111;
 
   /* Header & Footer Surface Tokens (Restored to original clean background / surface) */
   --header-bg: rgba(255, 255, 255, 0.85);
-  --header-border: #E5E7EB;
-  --footer-bg: #F8FAF8;
-  --footer-border: #E5E7EB;
+  --header-border: #e5e7eb;
+  --footer-bg: #f8faf8;
+  --footer-border: #e5e7eb;
 
-  --card: #FFFFFF;
+  --card: #ffffff;
   --card-foreground: #111111;
-  --popover: #FFFFFF;
+  --popover: #ffffff;
   --popover-foreground: #111111;
 
-  --primary: #2D9718;
-  --primary-hover: #247C13;
-  --primary-foreground: #FFFFFF;
-  --brand: #2D9718;
-  --brand-hover: #247C13;
-  --brand-foreground: #FFFFFF;
-  --soft-green: #EAF8E5;
+  --primary: #2d9718;
+  --primary-hover: #247c13;
+  --primary-foreground: #ffffff;
+  --brand: #2d9718;
+  --brand-hover: #247c13;
+  --brand-foreground: #ffffff;
+  --soft-green: #eaf8e5;
 
-  --secondary: #F8FAF8;
+  --secondary: #f8faf8;
   --secondary-foreground: #111111;
-  --muted: #F8FAF8;
+  --muted: #f8faf8;
   --muted-foreground: #555555;
   --subtle-foreground: #888888;
 
-  --accent: #2D9718;
-  --accent-foreground: #FFFFFF;
+  --accent: #2d9718;
+  --accent-foreground: #ffffff;
 
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 
-  --border: #E5E7EB;
-  --input: #E5E7EB;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
   --ring: rgba(45, 151, 24, 0.4);
 }
 
@@ -114,38 +114,38 @@
   --radius: 0.5rem;
 
   --background: #101010;
-  --foreground: #FFFFFF;
+  --foreground: #ffffff;
   --surface: #171717;
-  --surface-2: #1F1F1F;
-  --ink: #FFFFFF;
+  --surface-2: #1f1f1f;
+  --ink: #ffffff;
 
   /* Header & Footer Surface Tokens (Dark theme) */
   --header-bg: rgba(16, 16, 16, 0.85);
-  --header-border: #2C2C2C;
+  --header-border: #2c2c2c;
   --footer-bg: #171717;
-  --footer-border: #2C2C2C;
+  --footer-border: #2c2c2c;
 
-  --card: #161A16;
-  --card-foreground: #FFFFFF;
-  --popover: #161A16;
-  --popover-foreground: #FFFFFF;
+  --card: #161a16;
+  --card-foreground: #ffffff;
+  --popover: #161a16;
+  --popover-foreground: #ffffff;
 
-  --primary: #2D9718;
-  --primary-hover: #247C13;
-  --primary-foreground: #FFFFFF;
-  --brand: #2D9718;
-  --brand-hover: #247C13;
-  --brand-foreground: #FFFFFF;
+  --primary: #2d9718;
+  --primary-hover: #247c13;
+  --primary-foreground: #ffffff;
+  --brand: #2d9718;
+  --brand-hover: #247c13;
+  --brand-foreground: #ffffff;
   --soft-green: rgba(45, 151, 24, 0.2);
 
-  --secondary: #1F251F;
-  --secondary-foreground: #FFFFFF;
-  --muted: #1F251F;
-  --muted-foreground: #9CA3AF;
-  --subtle-foreground: #6B7280;
+  --secondary: #1f251f;
+  --secondary-foreground: #ffffff;
+  --muted: #1f251f;
+  --muted-foreground: #9ca3af;
+  --subtle-foreground: #6b7280;
 
-  --accent: #2D9718;
-  --accent-foreground: #FFFFFF;
+  --accent: #2d9718;
+  --accent-foreground: #ffffff;
 
   --border: #273027;
   --input: #273027;
@@ -187,38 +187,38 @@
 
 /* Flavor Multi-Color Utility Gradients & Accents */
 .bg-gradient-lemon {
-  background: linear-gradient(135deg, #FFD83B 0%, #56B13E 100%);
+  background: linear-gradient(135deg, #ffd83b 0%, #56b13e 100%);
 }
 .bg-gradient-punch {
-  background: linear-gradient(135deg, #FF3D74 0%, #FF7A00 100%);
+  background: linear-gradient(135deg, #ff3d74 0%, #ff7a00 100%);
 }
 .bg-gradient-fruit-mix {
-  background: linear-gradient(135deg, #E61C40 0%, #FF7A00 40%, #8B5CF6 100%);
+  background: linear-gradient(135deg, #e61c40 0%, #ff7a00 40%, #8b5cf6 100%);
 }
 .bg-gradient-berry {
-  background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
 }
 .bg-gradient-citrus {
-  background: linear-gradient(135deg, #F59E0B 0%, #10B981 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #10b981 100%);
 }
 
 .text-gradient-lemon {
-  background: linear-gradient(135deg, #F59E0B 0%, #2D9718 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #2d9718 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .text-gradient-punch {
-  background: linear-gradient(135deg, #E61C40 0%, #FF7A00 100%);
+  background: linear-gradient(135deg, #e61c40 0%, #ff7a00 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .text-gradient-fruit-mix {
-  background: linear-gradient(135deg, #E61C40 0%, #FF7A00 45%, #8B5CF6 100%);
+  background: linear-gradient(135deg, #e61c40 0%, #ff7a00 45%, #8b5cf6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .text-gradient-brand {
-  background: linear-gradient(135deg, #2D9718 0%, #56B13E 100%);
+  background: linear-gradient(135deg, #2d9718 0%, #56b13e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

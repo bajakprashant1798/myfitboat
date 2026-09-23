@@ -3,6 +3,7 @@ import { Providers } from "./providers";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { CartDrawer } from "@/components/site/CartDrawer";
+import { NavigationProgressBar } from "@/components/site/NavigationProgressBar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="antialiased">
         <Providers>
+          <NavigationProgressBar />
           <Navbar />
           <main>{children}</main>
           <Footer />
