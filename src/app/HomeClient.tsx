@@ -84,8 +84,7 @@ export function HomeClient({ product }: { product: ProductDetail }) {
             <br />
             Potassium <span className="text-gradient-brand">Rich</span>
             <br />
-            <span className="text-foreground">Electrolyte</span>{" "}
-            <span className="text-gradient-fruit-mix">Drink</span>
+            <span className="text-foreground">Electrolyte Drink</span>
           </h1>
           <p className="max-w-[45ch] text-base md:text-lg text-muted-foreground mb-10 text-pretty">
             Scientifically balanced ratio (1:1 or less) of Sodium and Potassium. Engineered with

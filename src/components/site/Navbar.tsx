@@ -13,6 +13,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const links = [
+    { href: "/", label: "Home" },
     { href: "/shop", label: "Shop" },
     { href: "/science", label: "Science" },
     { href: "/ingredients", label: "Ingredients" },

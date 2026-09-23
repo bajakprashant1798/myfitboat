@@ -37,7 +37,7 @@ export default function AboutPage() {
         <div className="p-8 md:p-16 flex items-center justify-center bg-surface relative overflow-hidden min-h-[300px]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,oklch(0.82_0.16_84/0.05)_0%,transparent_60%)]" />
           <img
-            src="/About Us.3.png"
+            src="/dishant.png"
             alt="MyFitBoat Origin and Mission"
             className="max-h-[350px] w-auto object-contain relative z-10 drop-shadow-[0_20px_40px_rgba(238,186,26,0.1)] rounded"
           />
