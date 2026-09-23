@@ -1,7 +1,7 @@
 import { getProductBySlug } from "@/lib/products.functions";
 import { ProductDetailClient } from "./ProductDetailClient";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface PageProps {
   params: Promise<{ slug: string }>;

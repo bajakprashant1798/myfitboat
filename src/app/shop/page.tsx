@@ -1,7 +1,7 @@
 import { listProducts } from "@/lib/products.functions";
 import { ShopClient } from "./ShopClient";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function ShopPage() {
   const products = await listProducts();
